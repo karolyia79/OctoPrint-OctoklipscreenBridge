@@ -5,7 +5,9 @@ import octoprint.plugin
 import paho.mqtt.client as mqtt
 
 class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
-                                  octoprint.plugin.SettingsPlugin):
+                                  octoprint.plugin.SettingsPlugin,
+                                  octoprint.plugin.TemplatePlugin,
+                                  octoprint.plugin.AssetPlugin):
 
     def __init__(self):
         self.mqtt_client = None
@@ -18,6 +20,12 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
         broker_ip = self._settings.get(["mqtt_broker"])
         if broker_ip:
             try:
+                if self.mqtt_client:
+                    try:
+                        self.mqtt_client.loop_stop()
+                        self.mqtt_client.disconnect()
+                    except:
+                        pass
                 self.mqtt_client = mqtt.Client("OctoPrint_OctoklipscreenBridge")
                 self.mqtt_client.connect(broker_ip, 1883, 60)
                 self.mqtt_client.loop_start()
@@ -25,14 +33,19 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
             except Exception as e:
                 self._logger.error("Failed to connect to MQTT broker: {}".format(e))
 
+    # Alapértelmezett beállítások
     def get_settings_defaults(self):
         return dict(
-            mqtt_broker="192.168.1.100" # Add meg a helyi MQTT broker IP-jét
+            mqtt_broker="192.168.1.100"
         )
 
+    # Beállítások sablon (Settings tab) megjelenítése
     def get_template_configs(self):
-        return [dict(type="settings", custom_bindings=False)]
+        return [
+            dict(type="settings", custom_bindings=False)
+        ]
 
+    # Soros kommunikáció elkapása és továbbítása MQTT-re
     def process_serial(self, comm_instance, line, *args, **kwargs):
         if line:
             if self.mqtt_client:
@@ -42,10 +55,9 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
                     self._logger.error("MQTT publish error: {}".format(e))
         return line
 
+    # Ha a felhasználó menti a beállításokat a felületen
     def on_settings_save(self, data):
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
-        if self.mqtt_client:
-            self.mqtt_client.loop_stop()
         self._init_mqtt()
 
 def __plugin_load__():
@@ -56,3 +68,6 @@ def __plugin_load__():
     __plugin_hooks__ = {
         "octoprint.comm.protocol.received": __plugin_implementation__.process_serial
     }
+
+def __plugin_python_compat__():
+    return ">=3,<4"
