@@ -25,7 +25,12 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
                         self.mqtt_client.disconnect()
                     except:
                         pass
-                self.mqtt_client = mqtt.Client("OctoPrint_OctoklipscreenBridge")
+                # Paho-mqtt 2.x kompatibilis inicializálás
+                try:
+                    self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, "OctoPrint_OctoklipscreenBridge")
+                except AttributeError:
+                    self.mqtt_client = mqtt.Client("OctoPrint_OctoklipscreenBridge")
+
                 self.mqtt_client.connect(broker_ip, 1883, 60)
                 self.mqtt_client.loop_start()
                 self._logger.info("Connected to MQTT broker at {}".format(broker_ip))
