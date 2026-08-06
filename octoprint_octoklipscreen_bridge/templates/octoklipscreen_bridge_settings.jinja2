@@ -5,7 +5,18 @@
             <label class="control-label" for="mqtt_broker_input">MQTT Broker IP</label>
             <div class="controls">
                 <input type="text" id="mqtt_broker_input" data-bind="value: settings.plugins.octoklipscreen_bridge.mqtt_broker">
-                <span class="help-block">Add meg a Home Assistant MQTT broker helyi IP-címét.</span>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="mqtt_user_input">MQTT Felhasználónév</label>
+            <div class="controls">
+                <input type="text" id="mqtt_user_input" data-bind="value: settings.plugins.octoklipscreen_bridge.mqtt_user">
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="mqtt_pass_input">MQTT Jelszó</label>
+            <div class="controls">
+                <input type="password" id="mqtt_pass_input" data-bind="value: settings.plugins.octoklipscreen_bridge.mqtt_pass">
             </div>
         </div>
     </form>
