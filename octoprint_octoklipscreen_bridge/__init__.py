@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import absolute_import
 
 import octoprint.plugin
@@ -54,6 +55,12 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
         self._init_mqtt()
 
+__plugin_name__ = "Octoklipscreen Bridge"
+__plugin_version__ = "0.1.0"
+__plugin_description__ = "Bridges raw terminal and serial logs to the Octoklipscreen ESP32 display."
+__plugin_author__ = "Andras"
+__plugin_python_compat__ = ">=3,<4"
+
 def __plugin_load__():
     global __plugin_implementation__
     __plugin_implementation__ = OctoklipscreenBridgePlugin()
@@ -62,6 +69,3 @@ def __plugin_load__():
     __plugin_hooks__ = {
         "octoprint.comm.protocol.received": __plugin_implementation__.process_serial
     }
-
-def __plugin_python_compat__():
-    return ">=3,<4"
