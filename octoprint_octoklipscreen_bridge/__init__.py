@@ -1,6 +1,13 @@
 # coding=utf-8
 from __future__ import absolute_import
 
+# Metaadatok közvetlenül az elején (JAVÍTVA: pythoncompat egybeírva!)
+__plugin_name__ = "Octoklipscreen Bridge"
+__plugin_version__ = "0.1.0"
+__plugin_description__ = "Bridges raw terminal and serial logs to the Octoklipscreen ESP32 display."
+__plugin_author__ = "Andras"
+__plugin_pythoncompat__ = ">=3,<4"
+
 import octoprint.plugin
 import paho.mqtt.client as mqtt
 
@@ -25,7 +32,7 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
                         self.mqtt_client.disconnect()
                     except:
                         pass
-                # Paho-mqtt 2.x kompatibilis inicializálás
+                
                 try:
                     self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, "OctoPrint_OctoklipscreenBridge")
                 except AttributeError:
@@ -59,12 +66,6 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
     def on_settings_save(self, data):
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
         self._init_mqtt()
-
-__plugin_name__ = "Octoklipscreen Bridge"
-__plugin_version__ = "0.1.0"
-__plugin_description__ = "Bridges raw terminal and serial logs to the Octoklipscreen ESP32 display."
-__plugin_author__ = "Andras"
-__plugin_python_compat__ = ">=3,<4"
 
 def __plugin_load__():
     global __plugin_implementation__
