@@ -40,7 +40,6 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
                 except AttributeError:
                     self.mqtt_client = mqtt.Client("OctoPrint_OctoklipscreenBridge")
 
-                # Ha van megadva felhasználónév, beállítjuk a hitelesítést
                 if mqtt_user and mqtt_pass:
                     self.mqtt_client.username_pw_set(mqtt_user, mqtt_pass)
 
