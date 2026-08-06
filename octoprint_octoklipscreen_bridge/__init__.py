@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
 
-# Metaadatok közvetlenül az elején (JAVÍTVA: pythoncompat egybeírva!)
 __plugin_name__ = "Octoklipscreen Bridge"
 __plugin_version__ = "0.1.0"
 __plugin_description__ = "Bridges raw terminal and serial logs to the Octoklipscreen ESP32 display."
@@ -24,6 +23,9 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
 
     def _init_mqtt(self):
         broker_ip = self._settings.get(["mqtt_broker"])
+        mqtt_user = self._settings.get(["mqtt_user"])
+        mqtt_pass = self._settings.get(["mqtt_pass"])
+        
         if broker_ip:
             try:
                 if self.mqtt_client:
@@ -38,6 +40,10 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
                 except AttributeError:
                     self.mqtt_client = mqtt.Client("OctoPrint_OctoklipscreenBridge")
 
+                # Ha van megadva felhasználónév, beállítjuk a hitelesítést
+                if mqtt_user and mqtt_pass:
+                    self.mqtt_client.username_pw_set(mqtt_user, mqtt_pass)
+
                 self.mqtt_client.connect(broker_ip, 1883, 60)
                 self.mqtt_client.loop_start()
                 self._logger.info("Connected to MQTT broker at {}".format(broker_ip))
@@ -46,7 +52,9 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
 
     def get_settings_defaults(self):
         return dict(
-            mqtt_broker="192.168.1.100"
+            mqtt_broker="192.168.1.100",
+            mqtt_user="",
+            mqtt_pass=""
         )
 
     def get_template_configs(self):
