@@ -2,16 +2,16 @@
 
 plugin_identifier = "octoklipscreen_bridge"
 plugin_package = "octoklipscreen_bridge"
-plugin_name = "OctoklipscreenBridge"
+plugin_name = "Octoklipscreen Bridge"
 plugin_version = "0.4.1"
 plugin_description = "Bridge to send serial logs via MQTT to CYD display"
 plugin_author = "Károlyi András"
 plugin_author_email = ""
-plugin_url = "https://github.com/karolyia79/OctoPrint-OctoklipscreenBridge"
+plugin_url = "https://github.com/karolyia79/OctoklipscreenBridge"
 plugin_license = "AGPLv3"
 
 plugin_requires = [
-    "paho-mqtt>=1.5.0,<2.0"
+    "paho-mqtt>=1.5.0,<3.0"
 ]
 
 plugin_additional_data = []
