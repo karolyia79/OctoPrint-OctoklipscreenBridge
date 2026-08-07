@@ -24,9 +24,13 @@ setup(
     include_package_data=True,
     install_requires=plugin_requires,
     python_requires=">=3",
+    classifiers=[
+        "License :: OSI Approved :: GNU Affero General Public License v3 (AGPLv3)",
+        "Programming Language :: Python :: 3",
+        "Framework :: OctoPrint",
+    ],
     entry_points="""
     [octoprint.plugin]
     {identifier} = {package}
-    """.format(identifier=plugin_identifier, package=plugin_package),
-    octoprint_requires=">=1.4.0"
+    """.format(identifier=plugin_identifier, package=plugin_package)
 )
