@@ -14,8 +14,6 @@ plugin_requires = [
     "paho-mqtt>=1.5.0,<2.0"
 ]
 
-plugin_additional_data = []
-
 setup(
     name=plugin_name,
     version=plugin_version,
@@ -25,8 +23,10 @@ setup(
     packages=[plugin_package],
     include_package_data=True,
     install_requires=plugin_requires,
+    python_requires=">=3",
     entry_points="""
     [octoprint.plugin]
     {identifier} = {package}
-    """.format(identifier=plugin_identifier, package=plugin_package)
+    """.format(identifier=plugin_identifier, package=plugin_package),
+    octoprint_requires=">=1.4.0"
 )
