@@ -1,5 +1,16 @@
 <div id="settings_plugin_octoklipscreen_bridge">
-    <h3>Octoklipscreen Bridge Settings</h3>
+    <h3>Octoklipscreen Bridge beállításai</h3>
+    
+    <p><strong>GitHub Repó:</strong> <a href="https://github.com/karolyia79/OctoPrint-OctoklipscreenBridge" target="_blank">karolyia79/OctoPrint-OctoklipscreenBridge</a></p>
+    
+    <p><strong>Miért kell ez a plugin?</strong><br>
+    Ez a plugin a CYD (Cheap Yellow Display) kijelzőre továbbítja az OctoPrint terminál teljes tartalmát (küldött parancsok és beérkező válaszok), hogy a kijelzőbe épített plugin-ek zökkenőmentesen és kétirányúan tudjanak kommunikálni az OctoPrint szerverrel.</p>
+    
+    <p><strong>Fontos megjegyzés a telepítéshez:</strong><br>
+    A maximális stabilitás és sebesség érdekében az OctoPrint szerveren szükséges egy saját, önálló MQTT broker (pl. Mosquitto) telepítése is, amelyhez ez a bridge csatlakozik.</p>
+    
+    <hr>
+    
     <form class="form-horizontal">
         <div class="control-group">
             <label class="control-label" for="mqtt_broker_input">MQTT Broker IP</label>
@@ -27,13 +38,9 @@
 
 <script type="text/javascript">
     $(function() {
-        $("#toggle_mqtt_pass").change(function() {
+        $("#toggle_mqtt_pass").on("change", function() {
             var passwordInput = $("#mqtt_pass_input");
-            if ($(this).is(":checked")) {
-                passwordInput.attr("type", "text");
-            } else {
-                passwordInput.attr("type", "password");
-            }
+            passwordInput.attr("type", $(this).is(":checked") ? "text" : "password");
         });
     });
 </script>
