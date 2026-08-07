@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 
 __plugin_name__ = "Octoklipscreen Bridge"
-__plugin_version__ = "0.1.7"
-__plugin_description__ = "Bridges OctoPrint terminal to MQTT for CYD displays."
+__plugin_version__ = "0.2.0"
+__plugin_description__ = "Bridges OctoPrint full terminal to MQTT for CYD displays."
 __plugin_pythoncompat__ = ">=3,<4"
 
 import octoprint.plugin
@@ -18,13 +18,6 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
 
     def on_after_startup(self):
         self._init_mqtt()
-        # Küldjünk egy teszt üzenetet induláskor, hogy lássuk, megy-e az MQTT
-        if self.mqtt_client:
-            try:
-                self.mqtt_client.publish("octoklipscreen/status", "plugin_started")
-                self._logger.info("Test message published to octoklipscreen/status")
-            except Exception as e:
-                self._logger.error("Startup publish error: {}".format(e))
 
     def _init_mqtt(self):
         broker_ip = self._settings.get(["mqtt_broker"]) or "localhost"
@@ -47,15 +40,27 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
         except Exception as e:
             self._logger.error("MQTT Connection Error: {}".format(e))
 
+    # Elkapja azt, amit az OctoPrint küld a nyomtatónak
+    def on_sending_line(self, comm_instance, phase, cmd, parameters, *args, **kwargs):
+        if cmd:
+            full_cmd = "{} {}".format(cmd, parameters).strip() if parameters else cmd
+            self._publish_to_mqtt(">> " + full_cmd)
+        elif parameters:
+            self._publish_to_mqtt(">> " + parameters)
+        return None
+
+    # Elkapja azt, amit a nyomtatómotor visszaküld
     def on_received_line(self, comm_instance, line, *args, **kwargs):
         if line:
-            self._logger.info("Line received from printer: {}".format(line.strip()))
-            if self.mqtt_client:
-                try:
-                    self.mqtt_client.publish("octoklipscreen/terminal", line.strip())
-                except Exception as e:
-                    self._logger.error("MQTT Publish Error: {}".format(e))
+            self._publish_to_mqtt("<< " + line.strip())
         return line
+
+    def _publish_to_mqtt(self, text):
+        if self.mqtt_client:
+            try:
+                self.mqtt_client.publish("octoklipscreen/terminal", text)
+            except Exception as e:
+                self._logger.error("MQTT Publish Error: {}".format(e))
 
     def get_settings_defaults(self):
         return dict(mqtt_broker="localhost", mqtt_user="mosquitto", mqtt_pass="")
@@ -69,5 +74,6 @@ def __plugin_load__():
 
     global __plugin_hooks__
     __plugin_hooks__ = {
+        "octoprint.comm.protocol.sending": __plugin_implementation__.on_sending_line,
         "octoprint.comm.protocol.received": __plugin_implementation__.on_received_line
     }
