@@ -1,14 +1,10 @@
 # coding=utf-8
 from __future__ import absolute_import
-
-__plugin_name__ = "Octoklipscreen Bridge"
-__plugin_version__ = "0.2.1"
-__plugin_description__ = "Bridges OctoPrint log/terminal to MQTT for CYD displays."
-__plugin_pythoncompat__ = ">=3,<4"
-
-import octoprint.plugin
+import threading
+import time
+import os
 import paho.mqtt.client as mqtt
-import logging
+import octoprint.plugin
 
 class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
                                   octoprint.plugin.SettingsPlugin,
@@ -16,67 +12,79 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
 
     def __init__(self):
         self.mqtt_client = None
+        self.stop_thread = False
+        self.thread = None
 
     def on_after_startup(self):
         self._init_mqtt()
+        
+        # Elindítjuk a háttérszálat a serial.log figyelésére
+        # Az OctoPrint log mappája általában a ~/.octoprint/logs/ alatt van
+        self.log_path = os.path.join(self.get_plugin_data_folder(), "../../logs/serial.log")
+        self.thread = threading.Thread(target=self._tail_log)
+        self.thread.daemon = True
+        self.thread.start()
 
     def _init_mqtt(self):
-        broker_ip = self._settings.get(["mqtt_broker"]) or "localhost"
-        mqtt_user = self._settings.get(["mqtt_user"])
-        mqtt_pass = self._settings.get(["mqtt_pass"])
-        
+        broker = self._settings.get(["mqtt_broker"]) or "localhost"
         try:
-            try:
-                self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, "OctoPrint_Bridge")
-            except AttributeError:
-                self.mqtt_client = mqtt.Client("OctoPrint_Bridge")
-
-            if mqtt_user and mqtt_pass:
-                self.mqtt_client.username_pw_set(mqtt_user, mqtt_pass)
-            
-            self.mqtt_client.connect(broker_ip, 1883, 60)
+            self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, "OctoPrint_LogBridge")
+            user = self._settings.get(["mqtt_user"])
+            pwd = self._settings.get(["mqtt_pass"])
+            if user:
+                self.mqtt_client.username_pw_set(user, pwd)
+            self.mqtt_client.connect(broker, 1883, 60)
             self.mqtt_client.loop_start()
-            self._logger.info("Connected to MQTT at {}".format(broker_ip))
+            self._logger.info("Octoklipscreen Bridge connected to MQTT.")
         except Exception as e:
-            self._logger.error("MQTT Connection Error: {}".format(e))
+            self._logger.error("MQTT connection failed: {}".format(e))
 
-    def publish_log(self, log_entry):
-        if self.mqtt_client and log_entry:
+    def _tail_log(self):
+        # Megvárjuk amíg létezik a fájl
+        while not os.path.exists(self.log_path) and not self.stop_thread:
+            time.sleep(1)
+            
+        while not self.stop_thread:
             try:
-                # Elküldjük a log üzenetet az MQTT-re
-                self.mqtt_client.publish("octoklipscreen/terminal", str(log_entry))
+                with open(self.log_path, "r") as f:
+                    inode = os.fstat(f.fileno()).st_ino
+                    f.seek(0, os.SEEK_END)
+                    
+                    while not self.stop_thread:
+                        if not os.path.exists(self.log_path):
+                            break
+                        current_inode = os.stat(self.log_path).st_ino
+                        if current_inode != inode:
+                            break # Logrotáció detektálva, újranyitjuk a fájlt
+                            
+                        line = f.readline()
+                        if not line:
+                            time.sleep(0.1)
+                            continue
+                            
+                        if self.mqtt_client:
+                            try:
+                                self.mqtt_client.publish("octoklipscreen/terminal", line.strip())
+                            except Exception:
+                                pass
             except Exception:
-                pass
+                time.sleep(1)
+
+    def on_shutdown(self):
+        self.stop_thread = True
+        if self.mqtt_client:
+            self.mqtt_client.loop_stop()
 
     def get_settings_defaults(self):
-        return dict(mqtt_broker="localhost", mqtt_user="mosquitto", mqtt_pass="")
+        return dict(
+            mqtt_broker="localhost",
+            mqtt_user="mosquitto",
+            mqtt_pass=""
+        )
 
     def get_template_configs(self):
         return [dict(type="settings", custom_bindings=False, template="octoklipscreen_bridge_settings.jinja2")]
 
-# Létrehozunk egy egyedi logging handler-t, ami rákötődik az OctoPrint kommunikációs logjára
-class MQTTLogHandler(logging.Handler):
-    def __init__(self, plugin_instance):
-        logging.Handler.__init__(self)
-        self.plugin_instance = plugin_instance
-
-    def emit(self, record):
-        try:
-            msg = self.format(record)
-            # Ha a kommunikációs logból jön a sor, továbbítjuk
-            if "octoprint.communication" in record.name:
-                self.plugin_instance.publish_log(msg)
-        except Exception:
-            pass
-
 def __plugin_load__():
     global __plugin_implementation__
     __plugin_implementation__ = OctoklipscreenBridgePlugin()
-
-    # Rákötjük a handlert az OctoPrint loggolási rendszerére
-    root_logger = logging.getLogger("octoprint.communication")
-    handler = MQTTLogHandler(__plugin_implementation__)
-    root_logger.addHandler(handler)
-
-    global __plugin_hooks__
-    __plugin_hooks__ = {}
