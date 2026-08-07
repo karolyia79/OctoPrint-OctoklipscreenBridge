@@ -2,9 +2,9 @@
 from __future__ import absolute_import
 
 __plugin_name__ = "Octoklipscreen Bridge"
-__plugin_version__ = "0.1.1"
+__plugin_version__ = "0.1.2"
 __plugin_description__ = "Bridges the entire OctoPrint terminal (send and receive) to MQTT for the Octoklipscreen display."
-__plugin_author__ = "Andras"
+__plugin_author__ = "Karolyi Andras"
 __plugin_pythoncompat__ = ">=3,<4"
 
 import octoprint.plugin
@@ -17,8 +17,8 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
     def __init__(self):
         self.mqtt_client = None
 
-    def initialize(self):
-        self._logger.info("Octoklipscreen Bridge initialized!")
+    def on_after_startup(self):
+        self._logger.info("Octoklipscreen Bridge started up, initializing MQTT...")
         self._init_mqtt()
 
     def _init_mqtt(self):
@@ -26,6 +26,8 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
         mqtt_user = self._settings.get(["mqtt_user"])
         mqtt_pass = self._settings.get(["mqtt_pass"])
         
+        self._logger.info("Configured MQTT Broker IP: {}".format(broker_ip))
+
         if broker_ip:
             try:
                 if self.mqtt_client:
@@ -45,9 +47,11 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
 
                 self.mqtt_client.connect(broker_ip, 1883, 60)
                 self.mqtt_client.loop_start()
-                self._logger.info("Connected to MQTT broker at {}".format(broker_ip))
+                self._logger.info("Successfully connected to MQTT broker at {}".format(broker_ip))
             except Exception as e:
                 self._logger.error("Failed to connect to MQTT broker: {}".format(e))
+        else:
+            self._logger.warning("No MQTT broker IP configured!")
 
     def get_settings_defaults(self):
         return dict(
