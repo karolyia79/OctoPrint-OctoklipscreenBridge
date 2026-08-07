@@ -50,7 +50,9 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
         return dict(mqtt_broker="localhost", mqtt_user="mosquitto", mqtt_pass="")
 
     def get_template_configs(self):
-        return [dict(type="settings", custom_bindings=False)]
+        return [
+            dict(type="settings", custom_bindings=False, template="octoklipscreen_bridge_settings.jinja2")
+        ]
 
 def __plugin_load__():
     global __plugin_implementation__
