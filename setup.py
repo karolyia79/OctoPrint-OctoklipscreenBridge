@@ -3,7 +3,7 @@
 plugin_identifier = "octoklipscreen_bridge"
 plugin_package = "octoklipscreen_bridge"
 plugin_name = "Octoklipscreen Bridge"
-plugin_version = "0.4.1"
+plugin_version = "0.4.2"
 plugin_description = "Bridge to send serial logs via MQTT to CYD display"
 plugin_author = "Károlyi András"
 plugin_author_email = ""
