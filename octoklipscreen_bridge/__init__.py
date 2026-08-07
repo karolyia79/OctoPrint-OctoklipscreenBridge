@@ -28,7 +28,13 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
     def _init_mqtt(self):
         broker = self._settings.get(["mqtt_broker"]) or "localhost"
         try:
-            self.mqtt_client = mqtt.Client("OctoPrint_LogBridge")
+            # Kompatibilitás a paho-mqtt v1.x és v2.x verziókkal
+            try:
+                import paho.mqtt.enums as mqtt_enums
+                self.mqtt_client = mqtt.Client(mqtt_enums.CallbackAPIVersion.VERSION1, "OctoPrint_LogBridge")
+            except (ImportError, AttributeError):
+                self.mqtt_client = mqtt.Client("OctoPrint_LogBridge")
+
             user = self._settings.get(["mqtt_user"])
             pwd = self._settings.get(["mqtt_pass"])
             if user:
