@@ -17,7 +17,23 @@
             <label class="control-label" for="mqtt_pass_input">MQTT Jelszó</label>
             <div class="controls">
                 <input type="password" id="mqtt_pass_input" data-bind="value: settings.plugins.octoklipscreen_bridge.mqtt_pass">
+                <label class="checkbox inline" style="margin-left: 10px; display: inline-block;">
+                    <input type="checkbox" id="toggle_mqtt_pass"> Mutat
+                </label>
             </div>
         </div>
     </form>
 </div>
+
+<script type="text/javascript">
+    $(function() {
+        $("#toggle_mqtt_pass").change(function() {
+            var passwordInput = $("#mqtt_pass_input");
+            if ($(this).is(":checked")) {
+                passwordInput.attr("type", "text");
+            } else {
+                passwordInput.attr("type", "password");
+            }
+        });
+    });
+</script>
