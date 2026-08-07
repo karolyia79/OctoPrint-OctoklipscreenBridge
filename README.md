@@ -6,12 +6,12 @@ Ez az OctoPrint plugin arra szolgál, hogy a nyomtató soros kommunikációs log
 
 ## ⚠️ FONTOS: A "serial.log" BEKAPCSOLÁSA (KÖTELEZŐ!)
 
-Ahhoz, hogy a plugin látja a nyomtatási terminál adatait, az OctoPrintben engedélyezni kell a kommunikációs naplózást. **Enélkül a plugin nem fog adatokat kapni!**
+Ahhoz, hogy a plugin lássa a nyomtatási terminál adatait, az OctoPrintben engedélyezni kell a kommunikációs naplózást. **Enélkül a plugin nem fog adatokat kapni!**
 
 1. Nyisd meg az OctoPrint felületét.
 2. Menj a **Beállítások (Settings)** -> **Features** fülre.
 3. Keresd meg a **Serial logging** szakaszt.
-4. Pipáld be a **`Log communication to serial.log`** opciót. *(Igen, ez az a bizonyos naplózó funkció, amivel eddig szívtunk, de mostantól erre épül a rendszer!)*
+4. Pipáld be a **`Log communication to serial.log`** opciót.
 5. Mentsd el a beállításokat.
 
 ---
@@ -57,6 +57,8 @@ Majd indítsd újra a Mosquitto szolgáltatást:
 sudo systemctl restart mosquitto
 ```
 
+---
+
 ## 📥 Normál telepítés (OctoPrint felületről) - Ajánlott
 
  1. Másold ki a GitHub repód ZIP archívumának direkt linkjét (https://github.com/karolyia79/octoprint-octoklipscreen/archive/refs/heads/master.zip).
@@ -64,6 +66,7 @@ sudo systemctl restart mosquitto
  3. Kattints a Get More gombra, majd alul a "...from URL" mezőbe illeszd be a linket.
  4. Kattints az Install gombra, majd a telepítés végén indítsd újra az OctoPrintet.
 
+---
 
 ## 📥 Telepítés (Fejlesztői módban)
 
