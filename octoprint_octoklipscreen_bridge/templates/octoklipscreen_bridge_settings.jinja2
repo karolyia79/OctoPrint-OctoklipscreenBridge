@@ -1,4 +1,4 @@
-<div id="settings_plugin_octoklipscreen">
+<div id="settings_plugin_octoklipscreenbridge">
     <h3>Octoklipscreen Bridge Beállítások</h3>
     
     <!-- Figyelmeztető doboz, mert úgyse olvassák el a readme-t :D -->
@@ -12,19 +12,19 @@
         <div class="control-group">
             <label class="control-label">MQTT Broker IP</label>
             <div class="controls">
-                <input type="text" data-bind="value: settings.plugins.octoklipscreen.mqtt_broker">
+                <input type="text" data-bind="value: settings.plugins.octoklipscreenbridge.mqtt_broker">
             </div>
         </div>
         <div class="control-group">
             <label class="control-label">MQTT User</label>
             <div class="controls">
-                <input type="text" data-bind="value: settings.plugins.octoklipscreen.mqtt_user">
+                <input type="text" data-bind="value: settings.plugins.octoklipscreenbridge.mqtt_user">
             </div>
         </div>
         <div class="control-group">
             <label class="control-label">MQTT Password</label>
             <div class="controls">
-                <input type="password" id="octoklipscreen_mqtt_pass" data-bind="value: settings.plugins.octoklipscreen.mqtt_pass">
+                <input type="password" id="octoklipscreen_mqtt_pass" data-bind="value: settings.plugins.octoklipscreenbridge.mqtt_pass">
                 <label class="checkbox" style="display: inline-block; margin-left: 10px;">
                     <input type="checkbox" id="show_password_checkbox" onclick="document.getElementById('octoklipscreen_mqtt_pass').type = this.checked ? 'text' : 'password';"> Jelszó mutatása
                 </label>
