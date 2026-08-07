@@ -5,8 +5,7 @@ PLUGIN_PACKAGE = "octoprint_octoklipscreen_bridge"
 PLUGIN_NAME = "OctoPrint-OctoklipscreenBridge"
 PLUGIN_VERSION = "0.1.3"
 PLUGIN_DESCRIPTION = "Bridges OctoPrint terminal to MQTT for CYD displays."
-PLUGIN_AUTHOR = "Karolyi Andras"
-PLUGIN_AUTHOR_EMAIL = ""
+PLUGIN_AUTHOR = "Andras Karolyi"
 PLUGIN_URL = "https://github.com/karolyia79/OctoPrint-OctoklipscreenBridge"
 PLUGIN_LICENSE = "AGPL-3.0"
 
@@ -22,7 +21,7 @@ setup(
     zip_safe=False,
     install_requires=[],
     entry_points="""
-        [octo_print.plugin]
+        [octoprint.plugin]
         {0} = {1}
     """.format(PLUGIN_IDENTIFIER, PLUGIN_PACKAGE)
 )
