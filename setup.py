@@ -22,8 +22,9 @@ setup(
     license=plugin_license,
     packages=[plugin_package],
     include_package_data=True,
+    zip_safe=False,
     install_requires=plugin_requires,
-    python_requires=">=3",
+    python_requires=">=3,<4",
     classifiers=[
         "License :: OSI Approved :: GNU Affero General Public License v3 (AGPLv3)",
         "Programming Language :: Python :: 3",
