@@ -17,12 +17,7 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
 
     def on_after_startup(self):
         self._init_mqtt()
-        
-        # Biztosabb útvonal a serial.log-hoz
-        logs_folder = self._settings.getBaseFolder("logs")
-        if not logs_folder:
-            logs_folder = os.path.expanduser("~/.octoprint/logs")
-        self.log_path = os.path.join(logs_folder, "serial.log")
+        self.log_path = os.path.expanduser("~/.octoprint/logs/serial.log")
 
         self.thread = threading.Thread(target=self._tail_log)
         self.thread.daemon = True
@@ -31,7 +26,8 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
     def _init_mqtt(self):
         broker = self._settings.get(["mqtt_broker"]) or "localhost"
         try:
-            self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, "OctoPrint_LogBridge")
+            # Kompatibilis a 1.x paho-mqtt verziókkal (1.6.1)
+            self.mqtt_client = mqtt.Client("OctoPrint_LogBridge")
             user = self._settings.get(["mqtt_user"])
             pwd = self._settings.get(["mqtt_pass"])
             if user:
@@ -43,7 +39,6 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
             self._logger.error("MQTT connection failed: {}".format(e))
 
     def _tail_log(self):
-        # Megvárjuk amíg létezik a fájl
         while not os.path.exists(self.log_path) and not self.stop_thread:
             time.sleep(1)
             
@@ -58,7 +53,7 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
                             break
                         current_inode = os.stat(self.log_path).st_ino
                         if current_inode != inode:
-                            break # Logrotáció detektálva, újranyitjuk a fájlt
+                            break
                             
                         line = f.readline()
                         if not line:
