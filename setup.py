@@ -1,10 +1,8 @@
 # coding=utf-8
 
-from setuptools import setup
-
-plugin_identifier = "octoklipscreenbridge"
-plugin_package = "octoprint_octoklipscreen_bridge"
-plugin_name = "OctoPrint-OctoklipscreenBridge"
+plugin_identifier = "octoklipscreen_bridge"
+plugin_package = "octoklipscreen_bridge"
+plugin_name = "Octoklipscreen Bridge"
 plugin_version = "0.4.1"
 plugin_description = "Bridge to send serial logs via MQTT to CYD display"
 plugin_author = "Károlyi András"
@@ -16,27 +14,39 @@ plugin_requires = [
     "paho-mqtt>=1.5.0,<2.0"
 ]
 
-setup(
+plugin_additional_data = []
+plugin_additional_packages = []
+plugin_ignored_packages = []
+additional_setup_parameters = {}
+
+from setuptools import setup
+
+try:
+    import octoprint_setuptools
+except:
+    print("Could not import OctoPrint's setuptools, are you sure you are running that under "
+          "the same python installation that OctoPrint is installed under?")
+    import sys
+    sys.exit(-1)
+
+setup_parameters = octoprint_setuptools.create_plugin_setup_parameters(
+    identifier=plugin_identifier,
+    package=plugin_package,
     name=plugin_name,
     version=plugin_version,
     description=plugin_description,
     author=plugin_author,
+    mail=plugin_author_email,
     url=plugin_url,
     license=plugin_license,
-    packages=[plugin_package],
-    include_package_data=True,
-    zip_safe=False,
-    install_requires=plugin_requires,
-    python_requires=">=3.7,<4",
-    classifiers=[
-        "License :: OSI Approved :: GNU Affero General Public License v3 (AGPLv3)",
-        "Programming Language :: Python :: 3",
-        "Framework :: OctoPrint",
-        "Intended Audience :: End Users/Desktop",
-        "Topic :: Printing",
-    ],
-    entry_points="""
-    [octoprint.plugin]
-    {identifier} = {package}
-    """.format(identifier=plugin_identifier, package=plugin_package)
+    requires=plugin_requires,
+    additional_packages=plugin_additional_packages,
+    ignored_packages=plugin_ignored_packages,
+    additional_data=plugin_additional_data
 )
+
+if len(additional_setup_parameters):
+    from octoprint.util import dict_merge
+    setup_parameters = dict_merge(setup_parameters, additional_setup_parameters)
+
+setup(**setup_parameters)
