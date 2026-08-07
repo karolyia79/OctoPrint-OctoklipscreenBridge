@@ -61,7 +61,8 @@ sudo systemctl restart mosquitto
 
 ## 📥 Normál telepítés (OctoPrint felületről) - Ajánlott
 
- 1. Másold ki a GitHub repód ZIP archívumának direkt linkjét (https://github.com/karolyia79/octoprint-octoklipscreen/archive/refs/heads/master.zip).
+ 1. Másold ki a GitHub repód ZIP archívumának direkt linkjét:
+    https://github.com/karolyia79/OctoPrint-OctoklipscreenBridge/archive/refs/heads/main.zip
  2. Nyisd meg az OctoPrint felületét, majd menj a Plugin Manager menüpontba.
  3. Kattints a Get More gombra, majd alul a "...from URL" mezőbe illeszd be a linket.
  4. Kattints az Install gombra, majd a telepítés végén indítsd újra az OctoPrintet.
