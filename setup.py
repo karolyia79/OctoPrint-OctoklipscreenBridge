@@ -1,23 +1,28 @@
 from setuptools import setup
 
-plugin_identifier = "octoklipscreen_bridge"
-plugin_package = "octoprint_octoklipscreen_bridge"
-plugin_name = "OctoPrint-OctoklipscreenBridge"
-plugin_version = "0.1.0"
-plugin_description = "Bridges raw terminal and serial logs to the Octoklipscreen ESP32 display."
-plugin_author = "Andras"
+PLUGIN_IDENTIFIER = "octoklipscreen_bridge"
+PLUGIN_PACKAGE = "octoprint_octoklipscreen_bridge"
+PLUGIN_NAME = "OctoPrint-OctoklipscreenBridge"
+PLUGIN_VERSION = "0.1.3"
+PLUGIN_DESCRIPTION = "Bridges OctoPrint terminal to MQTT for CYD displays."
+PLUGIN_AUTHOR = "Karolyi Andras"
+PLUGIN_AUTHOR_EMAIL = ""
+PLUGIN_URL = "https://github.com/karolyia79/OctoPrint-OctoklipscreenBridge"
+PLUGIN_LICENSE = "AGPL-3.0"
 
 setup(
-    name=plugin_name,
-    version=plugin_version,
-    description=plugin_description,
-    author=plugin_author,
-    packages=[plugin_package],
+    name=PLUGIN_NAME,
+    version=PLUGIN_VERSION,
+    description=PLUGIN_DESCRIPTION,
+    author=PLUGIN_AUTHOR,
+    url=PLUGIN_URL,
+    license=PLUGIN_LICENSE,
+    packages=[PLUGIN_PACKAGE],
     include_package_data=True,
     zip_safe=False,
-    install_requires=["paho-mqtt>=2.0.0"],
+    install_requires=[],
     entry_points="""
-        [octoprint.plugin]
-        %s = %s
-    """ % (plugin_identifier, plugin_package)
+        [octo_print.plugin]
+        {0} = {1}
+    """.format(PLUGIN_IDENTIFIER, PLUGIN_PACKAGE)
 )
