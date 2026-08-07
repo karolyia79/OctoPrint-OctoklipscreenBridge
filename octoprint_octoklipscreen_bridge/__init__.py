@@ -6,6 +6,8 @@ import os
 import paho.mqtt.client as mqtt
 import octoprint.plugin
 
+__plugin_python_version__ = ">=3,<4"
+
 class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
                                  octoprint.plugin.SettingsPlugin,
                                  octoprint.plugin.TemplatePlugin):
