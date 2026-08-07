@@ -1,6 +1,11 @@
 # coding=utf-8
 from __future__ import absolute_import
 
+__plugin_name__ = "Octoklipscreen Bridge"
+__plugin_version__ = "0.1.4"
+__plugin_description__ = "Bridges OctoPrint terminal to MQTT for CYD displays."
+__plugin_pythoncompat__ = ">=3,<4"
+
 import octoprint.plugin
 import paho.mqtt.client as mqtt
 
@@ -20,7 +25,11 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
         mqtt_pass = self._settings.get(["mqtt_pass"])
         
         try:
-            self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, "OctoPrint_Bridge")
+            try:
+                self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, "OctoPrint_Bridge")
+            except AttributeError:
+                self.mqtt_client = mqtt.Client("OctoPrint_Bridge")
+
             if mqtt_user and mqtt_pass:
                 self.mqtt_client.username_pw_set(mqtt_user, mqtt_pass)
             self.mqtt_client.connect(broker_ip, 1883, 60)
@@ -29,7 +38,6 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
         except Exception as e:
             self._logger.error("MQTT Error: {}".format(e))
 
-    # Ez a "nyers" adatfolyamot figyeli, ami minden sort elkap, hőmérsékletet is
     def on_received_line(self, comm_instance, line, *args, **kwargs):
         if self.mqtt_client and line:
             try:
