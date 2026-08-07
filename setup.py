@@ -3,7 +3,7 @@ from setuptools import setup
 PLUGIN_IDENTIFIER = "octoklipscreen_bridge"
 PLUGIN_PACKAGE = "octoprint_octoklipscreen_bridge"
 PLUGIN_NAME = "OctoPrint-OctoklipscreenBridge"
-PLUGIN_VERSION = "0.1.3"
+PLUGIN_VERSION = "0.1.4"
 PLUGIN_DESCRIPTION = "Bridges OctoPrint terminal to MQTT for CYD displays."
 PLUGIN_AUTHOR = "Andras Karolyi"
 PLUGIN_URL = "https://github.com/karolyia79/OctoPrint-OctoklipscreenBridge"
@@ -19,6 +19,7 @@ setup(
     packages=[PLUGIN_PACKAGE],
     include_package_data=True,
     zip_safe=False,
+    python_requires=">=3,<4",
     install_requires=[],
     entry_points="""
         [octoprint.plugin]
