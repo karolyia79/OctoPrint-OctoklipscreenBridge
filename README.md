@@ -18,18 +18,18 @@ Ahhoz, hogy a plugin látja a nyomtatási terminál adatait, az OctoPrintben eng
 
 ## 🛠️ MQTT Broker Telepítése és Beállítása (Raspberry Pi / Linux)
 
-Ha még nincs MQTT broker (Mosquitto) telepítve az OctoPrintet futtató gépre, az alábbi parancsokkal tudod feltenni és beállítani:
+Ha még nincs MQTT broker (Mosquitto) telepítve az OctoPrintet futtató gépre, vagy nincs a lokális hálózatodon, amit a plugin elérhetne, akkor az alábbi metódiust követve tudod feltenni és beállítani.
 
 ### 1. Telepítés
 Nyiss egy SSH terminált, és futtasd:
-```bash
+```
 sudo apt update
 sudo apt install mosquitto mosquitto-clients -y
 ```
 
 ### 2. Automatikus indítás beállítása
 Biztosítsd, hogy a Mosquitto elinduljon a rendszerrel együtt:
-```Bash
+```
 sudo systemctl enable mosquitto
 sudo systemctl start mosquitto
 ```
@@ -56,6 +56,7 @@ Majd indítsd újra a Mosquitto szolgáltatást:
 ```
 sudo systemctl restart mosquitto
 ```
+
 ## 📥 Normál telepítés (OctoPrint felületről) - Ajánlott
 
  1. Másold ki a GitHub repód ZIP archívumának direkt linkjét (https://github.com/karolyia79/octoprint-octoklipscreen/archive/refs/heads/master.zip).
