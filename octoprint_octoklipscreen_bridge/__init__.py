@@ -7,8 +7,8 @@ import paho.mqtt.client as mqtt
 import octoprint.plugin
 
 class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
-                                  octoprint.plugin.SettingsPlugin,
-                                  octoprint.plugin.TemplatePlugin):
+                                 octoprint.plugin.SettingsPlugin,
+                                 octoprint.plugin.TemplatePlugin):
 
     def __init__(self):
         self.mqtt_client = None
@@ -18,9 +18,12 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
     def on_after_startup(self):
         self._init_mqtt()
         
-        # Elindítjuk a háttérszálat a serial.log figyelésére
-        # Az OctoPrint log mappája általában a ~/.octoprint/logs/ alatt van
-        self.log_path = os.path.join(self.get_plugin_data_folder(), "../../logs/serial.log")
+        # Biztosabb útvonal a serial.log-hoz
+        logs_folder = self._settings.getBaseFolder("logs")
+        if not logs_folder:
+            logs_folder = os.path.expanduser("~/.octoprint/logs")
+        self.log_path = os.path.join(logs_folder, "serial.log")
+
         self.thread = threading.Thread(target=self._tail_log)
         self.thread.daemon = True
         self.thread.start()
@@ -73,7 +76,11 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
     def on_shutdown(self):
         self.stop_thread = True
         if self.mqtt_client:
-            self.mqtt_client.loop_stop()
+            try:
+                self.mqtt_client.loop_stop()
+                self.mqtt_client.disconnect()
+            except Exception:
+                pass
 
     def get_settings_defaults(self):
         return dict(
