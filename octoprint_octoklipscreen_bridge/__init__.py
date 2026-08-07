@@ -84,7 +84,7 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
         return dict(
             mqtt_broker="localhost",
             mqtt_user="mosquitto",
-            mqtt_pass=""
+            mqtt_pass="sheldon79"
         )
 
     def get_template_configs(self):
