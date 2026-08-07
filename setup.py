@@ -3,7 +3,7 @@
 from setuptools import setup
 
 plugin_identifier = "octoklipscreenbridge"
-plugin_package = "octoprint_octoklipscreenbridge"
+plugin_package = "octoprint_octoklipscreen_bridge"
 plugin_name = "OctoPrint-OctoklipscreenBridge"
 plugin_version = "0.4.0"
 plugin_description = "Bridge to send serial logs via MQTT to CYD display"
