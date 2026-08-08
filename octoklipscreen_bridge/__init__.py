@@ -1,99 +1,205 @@
 # coding=utf-8
-from __future__ import absolute_import
-import threading
-import time
-import os
-import paho.mqtt.client as mqtt
-import octoprint.plugin
+"""
+OctoklipscreenBridge - OctoPrint plugin
+Sends serial logs via MQTT to CYD display
+"""
 
-__plugin_python_version__ = ">=3,<4"
+import logging
+import threading
+import os
+
+import paho.mqtt.client as mqtt
+
+import octoprint.plugin
+from octoprint.util import RepeatedTimer
+
+__all__ = ["OctoklipscreenBridgePlugin"]
+
+logger = logging.getLogger(__name__)
+
 
 class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
-                                 octoprint.plugin.SettingsPlugin,
-                                 octoprint.plugin.TemplatePlugin):
+                                octoprint.plugin.SettingsPlugin,
+                                octoprint.plugin.EventHandlerPlugin):
+    """
+    OctoPrint plugin for bridging serial logs to MQTT
+    """
 
-    def __init__(self):
+    def initialize(self):
+        """Initialize the plugin"""
         self.mqtt_client = None
-        self.stop_thread = False
-        self.thread = None
+        self.serial_log_thread = None
+        self._serial_log_file = None
+        self._mqtt_connected = False
+        
+        # Get OctoPrint base folder for serial.log location
+        self._base_folder = self.get_plugin_data_folder()
+        os.makedirs(self._base_folder, exist_ok=True)
+
+    def get_settings_defaults(self):
+        """Return default settings"""
+        return {
+            "mqtt_host": "localhost",
+            "mqtt_port": 1883,
+            "mqtt_username": "",
+            "mqtt_password": "",
+            "mqtt_topic": "octoprint/serial",
+            "mqtt_enabled": True,
+            "log_serial": True
+        }
+
+    def get_template_configs(self):
+        """Return template configurations"""
+        return [
+            dict(type="settings", custom_bindings=False)
+        ]
 
     def on_after_startup(self):
-        self._init_mqtt()
-        self.log_path = os.path.expanduser("~/.octoprint/logs/serial.log")
-
-        self.thread = threading.Thread(target=self._tail_log)
-        self.thread.daemon = True
-        self.thread.start()
-
-    def _init_mqtt(self):
-        broker = self._settings.get(["mqtt_broker"]) or "localhost"
-        try:
-            # Kompatibilitás a paho-mqtt v1.x és v2.x verziókkal
-            try:
-                import paho.mqtt.enums as mqtt_enums
-                self.mqtt_client = mqtt.Client(mqtt_enums.CallbackAPIVersion.VERSION1, "OctoPrint_LogBridge")
-            except (ImportError, AttributeError):
-                self.mqtt_client = mqtt.Client("OctoPrint_LogBridge")
-
-            user = self._settings.get(["mqtt_user"])
-            pwd = self._settings.get(["mqtt_pass"])
-            if user:
-                self.mqtt_client.username_pw_set(user, pwd)
-            self.mqtt_client.connect(broker, 1883, 60)
-            self.mqtt_client.loop_start()
-            self._logger.info("Octoklipscreen Bridge connected to MQTT.")
-        except Exception as e:
-            self._logger.error("MQTT connection failed: {}".format(e))
-
-    def _tail_log(self):
-        while not os.path.exists(self.log_path) and not self.stop_thread:
-            time.sleep(1)
-            
-        while not self.stop_thread:
-            try:
-                with open(self.log_path, "r") as f:
-                    inode = os.fstat(f.fileno()).st_ino
-                    f.seek(0, os.SEEK_END)
-                    
-                    while not self.stop_thread:
-                        if not os.path.exists(self.log_path):
-                            break
-                        current_inode = os.stat(self.log_path).st_ino
-                        if current_inode != inode:
-                            break
-                            
-                        line = f.readline()
-                        if not line:
-                            time.sleep(0.1)
-                            continue
-                            
-                        if self.mqtt_client:
-                            try:
-                                self.mqtt_client.publish("octoklipscreen/terminal", line.strip())
-                            except Exception:
-                                pass
-            except Exception:
-                time.sleep(1)
+        """Called after OctoPrint startup"""
+        logger.info("OctoklipscreenBridge plugin started")
+        
+        if self._settings.get_boolean(["mqtt_enabled"]):
+            self._connect_mqtt()
+        else:
+            logger.info("MQTT is disabled in settings")
 
     def on_shutdown(self):
-        self.stop_thread = True
+        """Called when OctoPrint is shutting down"""
+        logger.info("OctoklipscreenBridge plugin shutting down")
+        self._disconnect_mqtt()
+
+    def on_event(self, event, payload):
+        """Handle OctoPrint events"""
+        if event == "PrintStarted":
+            self._send_mqtt_message("status", "Print started: " + payload.get("name", "Unknown"))
+        elif event == "PrintDone":
+            self._send_mqtt_message("status", "Print completed successfully")
+        elif event == "PrintFailed":
+            reason = payload.get("reason", "Unknown reason")
+            self._send_mqtt_message("status", f"Print failed: {reason}")
+
+    def _connect_mqtt(self):
+        """Connect to MQTT broker"""
+        try:
+            host = self._settings.get(["mqtt_host"])
+            port = self._settings.get_int(["mqtt_port"])
+            username = self._settings.get(["mqtt_username"])
+            password = self._settings.get(["mqtt_password"])
+
+            if not host:
+                logger.warning("MQTT host not configured")
+                return
+
+            self.mqtt_client = mqtt.Client(
+                client_id=f"octoprint_{os.environ.get('HOSTNAME', 'octoprint')}"
+            )
+            
+            # Set callbacks
+            self.mqtt_client.on_connect = self._on_mqtt_connect
+            self.mqtt_client.on_disconnect = self._on_mqtt_disconnect
+            self.mqtt_client.on_publish = self._on_mqtt_publish
+
+            # Set credentials if provided
+            if username and password:
+                self.mqtt_client.username_pw_set(username, password)
+
+            # Connect
+            logger.info(f"Connecting to MQTT broker at {host}:{port}")
+            self.mqtt_client.connect(host, port, keepalive=60)
+            self.mqtt_client.loop_start()
+
+        except Exception as e:
+            logger.error(f"Failed to connect to MQTT broker: {e}")
+            self.mqtt_client = None
+
+    def _disconnect_mqtt(self):
+        """Disconnect from MQTT broker"""
         if self.mqtt_client:
             try:
                 self.mqtt_client.loop_stop()
                 self.mqtt_client.disconnect()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Error disconnecting from MQTT: {e}")
+            finally:
+                self.mqtt_client = None
+                self._mqtt_connected = False
 
-    def get_settings_defaults(self):
+    def _on_mqtt_connect(self, client, userdata, flags, rc):
+        """MQTT connection callback"""
+        if rc == 0:
+            logger.info("Connected to MQTT broker")
+            self._mqtt_connected = True
+            self._send_mqtt_message("status", "OctoklipscreenBridge connected")
+        else:
+            logger.error(f"MQTT connection failed with code {rc}")
+            self._mqtt_connected = False
+
+    def _on_mqtt_disconnect(self, client, userdata, rc):
+        """MQTT disconnection callback"""
+        self._mqtt_connected = False
+        if rc != 0:
+            logger.warning(f"Unexpected MQTT disconnection (code {rc})")
+        else:
+            logger.info("Disconnected from MQTT broker")
+
+    def _on_mqtt_publish(self, client, userdata, mid):
+        """MQTT publish callback"""
+        pass  # Optional: log publishing events
+
+    def _send_mqtt_message(self, topic_suffix, message):
+        """Send message to MQTT broker"""
+        if not self._mqtt_connected or not self.mqtt_client:
+            return False
+
+        try:
+            base_topic = self._settings.get(["mqtt_topic"])
+            full_topic = f"{base_topic}/{topic_suffix}"
+            
+            result = self.mqtt_client.publish(full_topic, message, qos=1)
+            
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                logger.debug(f"Published to {full_topic}: {message}")
+                return True
+            else:
+                logger.error(f"Failed to publish to {full_topic}: {result.rc}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error publishing MQTT message: {e}")
+            return False
+
+    def send_serial_line(self, line):
+        """Send a serial line to MQTT"""
+        if self._settings.get_boolean(["mqtt_enabled"]):
+            self._send_mqtt_message("serial", line.strip())
+
+    @staticmethod
+    def get_update_information():
+        """Return update information"""
         return dict(
-            mqtt_broker="localhost",
-            mqtt_user="mosquitto",
-            mqtt_pass=""
+            octoklipscreen_bridge=dict(
+                displayName="OctoklipscreenBridge",
+                displayVersion="0.4.2",
+                type="github_release",
+                user="karolyia79",
+                repo="OctoklipscreenBridge",
+                current="0.4.2",
+                stable_branch=dict(
+                    name="Stable",
+                    branch="main",
+                    comittish=["main"]
+                ),
+                prerelease_branches=[]
+            )
         )
 
-    def get_template_configs(self):
-        return [dict(type="settings", custom_bindings=False, template="octoklipscreen_bridge_settings.jinja2")]
 
 def __plugin_load__():
+    """Load the plugin"""
     global __plugin_implementation__
     __plugin_implementation__ = OctoklipscreenBridgePlugin()
+
+    global __plugin_hooks__
+    __plugin_hooks__ = {
+        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+    }
