@@ -4,6 +4,8 @@ OctoklipscreenBridge - OctoPrint plugin
 Sends serial logs via MQTT to CYD display
 """
 
+__plugin_python_version__ = ">=3,<4"
+
 import logging
 import threading
 import os
