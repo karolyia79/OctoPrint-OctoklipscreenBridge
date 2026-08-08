@@ -1,92 +1,316 @@
-# OctoPrint Octoklipscreen Bridge
+# OctoklipscreenBridge - Telepítési és Hibaelhárítási Útmutató
 
-Ez az OctoPrint plugin arra szolgál, hogy a nyomtató soros kommunikációs logját háttérszálon elkapva, MQTT-n keresztül továbbítsa szűrés nélkül, soronként, a könnyű feldolgozhatóság érdekében
+## 📋 Rendszerkövetelmények
 
----
+- **OctoPrint**: 1.4.0 vagy újabb
+- **Python**: 3.7+ (a virális environmentben)
+- **MQTT Broker**: Mosquitto vagy bármely MQTT broker
+- **Operációs rendszer**: Linux (Raspberry Pi), macOS, vagy Windows
 
-## ⚠️ FONTOS: A "serial.log" BEKAPCSOLÁSA (KÖTELEZŐ!)
+## ✅ Előfeltételek Ellenőrzése
 
-Ahhoz, hogy a plugin lássa a nyomtatási terminál adatait, az OctoPrintben engedélyezni kell a kommunikációs naplózást. **Enélkül a plugin nem fog adatokat kapni!**
+Mielőtt telepítenéd, futtasd ezeket az ellenőrzéseket:
 
-1. Nyisd meg az OctoPrint felületét.
-2. Menj a **Beállítások (Settings)** -> **Features** fülre.
-3. Keresd meg a **Serial logging** szakaszt.
-4. Pipáld be a **`Log communication to serial.log`** opciót.
-5. Mentsd el a beállításokat.
+```bash
+# 1. OctoPrint virtuális environment aktiválása
+source ~/oprint/bin/activate
 
----
+# 2. Python verzió ellenőrzése
+python --version
+# Kimenetnek 3.7 vagy újabbnak kell lennie
 
-## 🛠️ MQTT Broker Telepítése és Beállítása (Raspberry Pi / Linux)
+# 3. OctoPrint telepítés ellenőrzése
+pip list | grep octoprint
+# OctoPrint-nek kell megjelennie
 
-Ha még nincs MQTT broker (Mosquitto) telepítve az OctoPrintet futtató gépre, vagy nincs a lokális hálózatodon, amit a plugin elérhetne, akkor az alábbi metódiust követve tudod feltenni és beállítani.
-
-### 1. Telepítés
-Nyiss egy SSH terminált, és futtasd:
+# 4. pip/setuptools frissítése
+pip install --upgrade pip setuptools wheel
 ```
+
+## 🔧 Normál Telepítés (Ajánlott)
+
+### OctoPrint Web UI-ból
+
+1. **OctoPrint megnyitása** → Menü → Plugin Manager
+2. **"Get More" gombra kattintás**
+3. **"...from URL" mezőbe beillesztés:**
+   ```
+   https://github.com/karolyia79/OctoklipscreenBridge/archive/refs/heads/main.zip
+   ```
+4. **"Install" gombra kattintás**
+5. **OctoPrint újraindítása** a Plugin Manager alatt
+
+## 🛠️ Fejlesztői Telepítés
+
+Ha saját módosításokat szeretnél végezni:
+
+```bash
+# 1. OctoPrint virtual environment aktiválása
+source ~/oprint/bin/activate
+
+# 2. Repository klónozása
+mkdir -p ~/octoprint_plugins
+cd ~/octoprint_plugins
+git clone https://github.com/karolyia79/OctoklipscreenBridge.git
+cd OctoklipscreenBridge
+
+# 3. Plugin telepítése szerkesztési módban
+pip install -e .
+
+# 4. OctoPrint újraindítása
+sudo systemctl restart octoprint
+
+# 5. Naplók megtekintése
+tail -f ~/.octoprint/logs/octoprint.log
+```
+
+## ⚙️ Konfiguráció
+
+### 1. Serial Logging Bekapcsolása (KÖTELEZŐ!)
+
+Az OctoPrint-ben:
+1. **Beállítások (Settings)** → **Features**
+2. **Serial Logging** szakasz
+3. **✓ Log communication to serial.log** pipálása
+4. **Save**
+
+### 2. MQTT Broker Telepítése (Raspberry Pi/Linux)
+
+```bash
+# Mosquitto telepítése
 sudo apt update
 sudo apt install mosquitto mosquitto-clients -y
-```
 
-### 2. Automatikus indítás beállítása
-Biztosítsd, hogy a Mosquitto elinduljon a rendszerrel együtt:
-```
+# Automatikus indítás
 sudo systemctl enable mosquitto
 sudo systemctl start mosquitto
+
+# Tesztelés
+mosquitto_sub -t "test" &
+mosquitto_pub -t "test" -m "Hello"
 ```
 
-### 3. Jelszavas védelem beállítása (Ajánlott)
-Hozz létre egy felhasználót (pl. mosquitto néven):
-```
+### 3. MQTT Jelszavas Védelem (Ajánlott)
+
+```bash
+# Felhasználó létrehozása
 sudo mosquitto_passwd -c /etc/mosquitto/passwd mosquitto
-```
-(A parancs után add meg a kívánt jelszót!)
 
-### 4. Mosquitto konfigurálása
-Hozz létre vagy szerkeszd a konfig fájlt:
-```
+# Konfiguráció
 sudo nano /etc/mosquitto/conf.d/default.conf
 ```
-Illeszd be az alábbi sorokat:
+
+Illeszd be:
 ```
 listener 1883
 allow_anonymous false
 password_file /etc/mosquitto/passwd
 ```
-Majd indítsd újra a Mosquitto szolgáltatást:
-```
+
+```bash
+# Mosquitto újraindítása
 sudo systemctl restart mosquitto
 ```
 
----
+### 4. Plugin Beállítása OctoPrint-ben
 
-## 📥 Normál telepítés (OctoPrint felületről) - Ajánlott
+1. **Beállítások** → **OctoklipscreenBridge**
+2. Kitöltsd az MQTT beállításokat:
+   - **MQTT Host**: localhost (vagy az MQTT szerver IP-je)
+   - **MQTT Port**: 1883
+   - **MQTT Username**: mosquitto (vagy a beállított felhasználónév)
+   - **MQTT Password**: (a beállított jelszó)
+   - **MQTT Topic**: octoprint/serial (vagy egyéni)
+3. **Enable MQTT Bridge** pipálása
+4. **Save**
 
- 1. Másold ki a GitHub repód ZIP archívumának direkt linkjét:
-    https://github.com/karolyia79/OctoPrint-OctoklipscreenBridge/archive/refs/heads/main.zip
- 2. Nyisd meg az OctoPrint felületét, majd menj a Plugin Manager menüpontba.
- 3. Kattints a Get More gombra, majd alul a "...from URL" mezőbe illeszd be a linket.
- 4. Kattints az Install gombra, majd a telepítés végén indítsd újra az OctoPrintet.
+## 🐛 Hibaelhárítás
 
----
+### "Could not import OctoPrint's setuptools"
 
-## 📥 Telepítés (Fejlesztői módban)
+**Ok:** Az OctoPrint virtual environment nem aktív
 
-### 1. Hozd létre a megfelelő könyvtárat, lépj bele, majd klónozd le a GitHub repót:
-   ```
-   mkdir -p ~/octoprint_dev
-   cd ~/octoprint_dev
-   git clone [https://github.com/FELHASZNALONEV/octoprint-octoklipscreen.git](https://github.com/FELHASZNALONEV/octoprint-octoklipscreen.git)
-   cd octoprint-octoklipscreen
-   ```
-### 2. Aktiváld az OctoPrint virtuális környezetét::
-```
+**Megoldás:**
+```bash
 source ~/oprint/bin/activate
-```
-### 3. Telepítsd a csomagot fejlesztői módban:
-```
 pip install -e .
-```
-### 4. Indítsd újra az OctoPrintet:
-```
 sudo systemctl restart octoprint
 ```
+
+### "ModuleNotFoundError: No module named 'paho.mqtt'"
+
+**Megoldás:**
+```bash
+source ~/oprint/bin/activate
+pip install paho-mqtt>=1.5.0,<3.0
+sudo systemctl restart octoprint
+```
+
+### MQTT Csatlakozási Hiba
+
+**Ellenőrizd:**
+```bash
+# 1. MQTT szerver működik-e?
+sudo systemctl status mosquitto
+
+# 2. Port nyitva?
+netstat -tuln | grep 1883
+
+# 3. Teszteld a csatlakozást
+mosquitto_pub -h localhost -u mosquitto -P jelszó -t "test" -m "test"
+```
+
+### A Plugin Nem Jelenik Meg
+
+**Megoldás:**
+```bash
+# Naplók ellenőrzése
+tail -100 ~/.octoprint/logs/octoprint.log
+
+# Plugin könyvtár ellenőrzése
+ls -la ~/.octoprint/plugins/
+
+# Újratelepítés
+source ~/oprint/bin/activate
+pip uninstall octoklipscreen_bridge -y
+pip install -e .
+sudo systemctl restart octoprint
+```
+
+### Serial Log Üres
+
+**Ellenőrzés:**
+1. Serial logging **bekapcsolva**-e az OctoPrint Settings-ben?
+2. Van-e conectado printer az OctoPrinthez?
+3. Ellenőrizd a naplóban: `~/.octoprint/logs/serial.log`
+
+## 📊 MQTT Üzenetek Tesztelése
+
+```bash
+# Egy másik terminálból figyeld az üzeneteket
+mosquitto_sub -h localhost -u mosquitto -P jelszó -t "octoprint/#" -v
+
+# Vagy grafikus eszközzel (pl. MQTT Explorer):
+# https://mqtt-explorer.com/
+```
+
+## 📝 MQTT Topic Szerkezet
+
+```
+octoprint/
+├── serial/      # Soros kommunikáció
+├── status/      # Nyomtatási státusz
+└── events/      # Nyomtatási események
+```
+
+## 🔄 Frissítés
+
+### Automatikus Frissítés
+
+1. **Beállítások** → **Software Update**
+2. Ha frissítés elérhető, megjelenik az OctoklipscreenBridge-hez
+
+### Manuális Frissítés
+
+```bash
+source ~/oprint/bin/activate
+cd ~/octoprint_plugins/OctoklipscreenBridge
+git pull
+pip install -e .
+sudo systemctl restart octoprint
+```
+
+## 📋 Naplózás és Debug
+
+### Részletes Naplózás Engedélyezése
+
+1. **Beállítások** → **Logging**
+2. Keress az `octoklipscreen_bridge` logger-re
+3. Állítsd **DEBUG** szintre
+4. **Save**
+
+```bash
+# Naplók valós időben
+tail -f ~/.octoprint/logs/octoprint.log | grep octoklipscreen
+```
+
+### Log Elérési Helyek
+
+```bash
+# OctoPrint logs
+~/.octoprint/logs/octoprint.log
+
+# Mosquitto logs
+tail -f /var/log/mosquitto/mosquitto.log
+
+# System journal (Raspberry Pi)
+sudo journalctl -u octoprint -f
+```
+
+## 🆘 Támogatás és Problémájelentés
+
+Ha a probléma nem oldódik meg:
+
+1. **GitHub Issues**: https://github.com/karolyia79/OctoklipscreenBridge/issues
+2. **OctoPrint Community**: https://community.octoprint.org/
+3. **Csatolt információk:**
+   - Python verzió: `python --version`
+   - OctoPrint verzió: OctoPrint UI → About
+   - Naplófájlok: `~/.octoprint/logs/octoprint.log` (utolsó 100 sor)
+   - MQTT teszt kimenetele
+
+## 📚 Adapterek és Kompatibilitás
+
+### Támogatott MQTT Brokerek
+
+- ✅ Mosquitto (ajánlott)
+- ✅ ActiveMQ
+- ✅ RabbitMQ
+- ✅ EMQX
+- ✅ AWS IoT
+
+### Támogatott Kijelzők
+
+- ✅ CYD (Cheap Yellow Display)
+- ✅ ESP32 MQTT kliensek
+- ✅ Home Assistant MQTT integrációk
+
+## 💡 Tippek és Trükkök
+
+### Raspberry Pi Erőforrások Takarékossága
+
+```bash
+# Mosquitto konfigurálása alacsony memóriához
+sudo nano /etc/mosquitto/conf.d/memory.conf
+
+# Illeszd be:
+max_connections -1
+max_queued_messages 0
+```
+
+### Auto-restart OctoklipscreenBridge Hiba után
+
+```bash
+# Systemd service fájl létrehozása
+sudo nano /etc/systemd/system/octoprint-bridge-watcher.service
+
+# Illeszd be:
+[Unit]
+Description=OctoklipscreenBridge Watcher
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/usr/bin/python3 -c "import time; time.sleep(10)"
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+---
+
+**Utolsó frissítés:** 2026. augusztus
+**Plugin verzió:** 0.4.2+
