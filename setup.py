@@ -40,7 +40,7 @@ plugin_ignored_packages = []
 
 # Extra setup paraméterek
 additional_setup_parameters = {
-    "python_requires": ">=3.7,<4",
+    "python_requires": ">=3,<4",
     "classifiers": [
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
