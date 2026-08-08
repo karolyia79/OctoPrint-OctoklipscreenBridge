@@ -1,9 +1,7 @@
 recursive-include octoklipscreen_bridge/templates *
-recursive-include octoklipscreen_bridge/static *
 include octoklipscreen_bridge/__init__.py
 include setup.py
 include README.md
-include LICENSE
 global-exclude __pycache__
 global-exclude *.pyc
 global-exclude *.pyo
