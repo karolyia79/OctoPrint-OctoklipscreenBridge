@@ -54,7 +54,7 @@ additional_setup_parameters = {
     ]
 }
 
-# OctoPrint setuptools import
+# OctoPrint setuptools import (biztonságos fallback-kel az izolált webes telepítőkhöz)
 def import_octoprint_setuptools():
     """
     Import OctoPrint setuptools with informative error handling.
@@ -62,27 +62,8 @@ def import_octoprint_setuptools():
     try:
         import octoprint_setuptools
         return octoprint_setuptools
-    except ImportError as e:
-        print("\n" + "="*70)
-        print("ERROR: Could not import OctoPrint's setuptools module")
-        print("="*70)
-        print("\nThis error occurs when:")
-        print("  1. OctoPrint is not installed")
-        print("  2. The OctoPrint virtual environment is not activated")
-        print("  3. You're using the wrong Python interpreter")
-        print("\nSOLUTION:")
-        print("-" * 70)
-        print("Make sure you are in the OctoPrint virtual environment:\n")
-        print("  source ~/oprint/bin/activate\n")
-        print("Then reinstall the plugin:\n")
-        print("  pip install -e .\n")
-        print("Or for troubleshooting, check Python paths:")
-        print(f"  Current Python: {sys.executable}")
-        print(f"  Python version: {sys.version}")
-        print("\nFull error details:")
-        print(f"  {e}")
-        print("="*70 + "\n")
-        sys.exit(1)
+    except ImportError:
+        return None
 
 # Import és konfigurálás
 octoprint_setuptools = import_octoprint_setuptools()
@@ -95,21 +76,37 @@ except ImportError:
     sys.exit(1)
 
 # Setup paraméterek összeállítása
-setup_parameters = octoprint_setuptools.create_plugin_setup_parameters(
-    identifier=plugin_identifier,
-    package=plugin_package,
-    name=plugin_name,
-    version=plugin_version,
-    description=plugin_description,
-    author=plugin_author,
-    mail=plugin_author_email,
-    url=plugin_url,
-    license=plugin_license,
-    requires=plugin_requires,
-    additional_packages=plugin_additional_packages,
-    ignored_packages=plugin_ignored_packages,
-    additional_data=plugin_additional_data
-)
+if octoprint_setuptools is not None:
+    setup_parameters = octoprint_setuptools.create_plugin_setup_parameters(
+        identifier=plugin_identifier,
+        package=plugin_package,
+        name=plugin_name,
+        version=plugin_version,
+        description=plugin_description,
+        author=plugin_author,
+        mail=plugin_author_email,
+        url=plugin_url,
+        license=plugin_license,
+        requires=plugin_requires,
+        additional_packages=plugin_additional_packages,
+        ignored_packages=plugin_ignored_packages,
+        additional_data=plugin_additional_data
+    )
+else:
+    # Fallback, ha az OctoPrint izolált környezetben futtatja a webes telepítőt
+    setup_parameters = dict(
+        name=plugin_name,
+        version=plugin_version,
+        description=plugin_description,
+        author=plugin_author,
+        author_email=plugin_author_email,
+        url=plugin_url,
+        license=plugin_license,
+        packages=[plugin_package],
+        include_package_data=True,
+        install_requires=plugin_requires,
+        zip_safe=False
+    )
 
 # Extra paraméterek hozzáadása
 if additional_setup_parameters:
@@ -117,7 +114,6 @@ if additional_setup_parameters:
         from octoprint.util import dict_merge
         setup_parameters = dict_merge(setup_parameters, additional_setup_parameters)
     except ImportError:
-        # Fallback: manual merge ha dict_merge nem elérhető
         setup_parameters.update(additional_setup_parameters)
 
 # Setup futtatása
