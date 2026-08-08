@@ -53,7 +53,17 @@ class OctoklipscreenBridgePlugin(octoprint.plugin.StartupPlugin,
         return [
             dict(type="settings", custom_bindings=False)
         ]
+      
+    def process_gcode_sent(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+        """Elkapja a nyomtatónak küldött parancsokat"""
+        self.send_serial_line(f"Send: {cmd}")
+        return None
 
+    def process_gcode_received(self, comm_instance, line, *args, **kwargs):
+        """Elkapja a nyomtatótól érkező válaszokat"""
+        self.send_serial_line(f"Recv: {line}")
+        return line
+      
     def on_after_startup(self):
         """Called after OctoPrint startup"""
         logger.info("OctoklipscreenBridge plugin started")
@@ -201,5 +211,7 @@ def __plugin_load__():
 
     global __plugin_hooks__
     __plugin_hooks__ = {
-        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
+        "octoprint.comm.protocol.gcode.sent": __plugin_implementation__.process_gcode_sent,
+        "octoprint.comm.protocol.gcode.received": __plugin_implementation__.process_gcode_received
     }
